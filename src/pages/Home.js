@@ -19,11 +19,13 @@ import axios from "axios";
 //material-i icons
 import Delete from "@material-ui/icons/Delete";
 import Edit from "@material-ui/icons/Edit";
+import Pageview from "@material-ui/icons/Pageview";
 //import Redux
 import { getCountries, postCountry } from "../_actions/country";
 import { getProvince, postProvince } from "../_actions/province";
 import { getCities, postCity } from "../_actions/city";
 //import Component
+import { DataDetails } from "../components/data-details";
 
 const useStyles = makeStyles(theme => ({
   grow: {
@@ -304,7 +306,12 @@ export default function Home() {
       </div>
       <div className={classes.countries}>
         {countries.map((item, index) => (
-          <AllCountry key={index} name={item.country_name} id={item.id} />
+          <AllCountry
+            key={index}
+            name={item.country_name}
+            id={item.id}
+            code={item.country_code}
+          />
         ))}
 
         <AddCountry />
@@ -317,6 +324,7 @@ export const AllCountry = props => {
   const classes = useStyles();
   const [click, setClick] = React.useState(true);
   const [visible, setVisible] = React.useState(false);
+  const [open, setOpen] = React.useState(false);
 
   //Redux
   const dispatch = useDispatch();
@@ -338,10 +346,10 @@ export const AllCountry = props => {
           onMouseEnter={() => setVisible(true)}
           onMouseLeave={() => setVisible(false)}
         >
-          <div
-            onClick={setclick}
-            style={{ flex: 1, textAlign: "center", paddingLeft: "65px" }}
-          >
+          <div style={{ opacity: visible ? 1 : 0 }}>
+            <DataDetails name={props.name} code={props.code} type={"Country"} />
+          </div>
+          <div onClick={setclick} style={{ flex: 1, textAlign: "center" }}>
             {props.name}
           </div>
           <div
@@ -368,10 +376,14 @@ export const AllCountry = props => {
             onMouseEnter={() => setVisible(true)}
             onMouseLeave={() => setVisible(false)}
           >
-            <div
-              onClick={setclick}
-              style={{ flex: 1, textAlign: "center", paddingLeft: "65px" }}
-            >
+            <div style={{ opacity: visible ? 1 : 0 }}>
+              <DataDetails
+                name={props.name}
+                code={props.code}
+                type={"Country"}
+              />
+            </div>
+            <div onClick={setclick} style={{ flex: 1, textAlign: "center" }}>
               {props.name}
             </div>
             <div
@@ -391,49 +403,51 @@ export const AllCountry = props => {
               </div>
             </div>
           </div>
-          <div
-            style={{
-              border: "1px solid #a9bd7d",
-              backgroundColor: "#a9bd7d",
-              paddingLeft: "3px",
-              paddingRight: "5px",
-              marginBottom: 10,
-              paddingTop: 5
-            }}
-          >
-            {province.map((item, index) => (
-              <div>
-                {props.id == item.country_id ? (
-                  <div>
-                    <AllProvince
-                      name={item.province_name}
-                      provinceId={item.id}
-                      countryId={item.country_id}
-                    />
-                    {index == province.length - 1 && (
-                      <div>
-                        <AllProvince
-                          name={"Add Province"}
-                          countryId={item.country_id}
-                        />
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div>
-                    {index == province.length - 1 && (
-                      <div>
-                        <AllProvince
-                          name={"Add Province"}
-                          countryId={props.id}
-                        />
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
+          {province.find(function(e) {
+            return e.country_id == props.id;
+          }) ? (
+            <div
+              style={{
+                border: "1px solid #a9bd7d",
+                backgroundColor: "#a9bd7d",
+                paddingLeft: "3px",
+                paddingRight: "5px",
+                marginBottom: 10,
+                paddingTop: 5
+              }}
+            >
+              {province.map((item, index) => (
+                <div>
+                  {props.id == item.country_id && (
+                    <div>
+                      <AllProvince
+                        name={item.province_name}
+                        code={item.province_code}
+                        provinceId={item.id}
+                        countryId={item.country_id}
+                      />
+                      {index == province.length - 1 && (
+                        <div>
+                          <AllProvince
+                            name={"Add Province"}
+                            countryId={item.country_id}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div>
+              <AddProvince
+                name={"Add Province"}
+                countryId={props.id}
+                color={"#000"}
+              />
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -537,6 +551,7 @@ export const AllProvince = props => {
       ) : (
         <AllCity
           name={props.name}
+          code={props.code}
           provinceId={props.provinceId}
           countryId={props.countryId}
         />
@@ -569,9 +584,10 @@ export const AllCity = props => {
         onMouseEnter={() => setVisible(true)}
         onMouseLeave={() => setVisible(false)}
       >
-        <div style={{ flex: 1, textAlign: "center", paddingLeft: "65px" }}>
-          {props.name}
+        <div style={{ opacity: visible ? 1 : 0 }}>
+          <DataDetails name={props.name} code={props.code} type={"Province"} />
         </div>
+        <div style={{ flex: 1, textAlign: "center" }}>{props.name}</div>
         <div
           style={{
             display: "flex",
@@ -604,6 +620,7 @@ export const AllCity = props => {
                 <div>
                   <City
                     name={item.city_name}
+                    code={item.city_code}
                     id={item.id}
                     cityName={item.city_name}
                     provinceId={props.provinceId}
@@ -795,14 +812,33 @@ export const City = props => {
   const [visible, setVisible] = React.useState(false);
   return (
     <div
-      style={{ display: "flex", flexDirection: "row", alignItems: "center" }}
+      style={{
+        display: "flex",
+        flexDirection: "row",
+        justifyContent: "center",
+        alignItems: "center"
+      }}
       onMouseEnter={() => setVisible(true)}
       onMouseLeave={() => setVisible(false)}
     >
+      <div
+        style={{
+          width: "60px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          opacity: visible ? 1 : 0
+        }}
+      >
+        <DataDetails
+          name={props.name}
+          code={props.code}
+          type={"City"}
+          color={"#fff"}
+        />
+      </div>
       <div className={classes.cities}>
-        <div style={{ flex: 1, textAlign: "center", paddingLeft: "65px" }}>
-          {props.name}
-        </div>
+        <div style={{ flex: 1, textAlign: "center" }}>{props.name}</div>
       </div>
       <div
         style={{
@@ -867,7 +903,7 @@ export const EditCity = props => {
 
   return (
     <div>
-      <Edit onClick={() => modalOpen()} />
+      <Edit onClick={() => modalOpen()} style={{ color: "#fff" }} />
       <Modal
         aria-labelledby="transition-modal-title"
         aria-describedby="transition-modal-description"
@@ -952,7 +988,7 @@ export const DeleteCity = props => {
 
   return (
     <div>
-      <Delete onClick={modalOpen} />
+      <Delete onClick={modalOpen} style={{ color: "#fff" }} />
       <Modal
         aria-labelledby="transition-modal-title"
         aria-describedby="transition-modal-description"
@@ -1129,7 +1165,11 @@ export const AddProvince = props => {
 
   return (
     <div>
-      <div className={classes.provinceNone} onClick={handleOpen}>
+      <div
+        className={classes.provinceNone}
+        style={{ color: props.color ? props.color : "#fff" }}
+        onClick={handleOpen}
+      >
         Add Province
       </div>
       <Modal
